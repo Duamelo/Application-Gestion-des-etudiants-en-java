@@ -15,6 +15,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,29 +27,37 @@ import java.util.logging.Logger;
  */
 public class Database 
 {
-    private ArrayList<Etudiant> etudiant;
+    private List<Etudiant> etudiant;
     
     public Database()
     {
-        etudiant = new ArrayList<Etudiant>();
+        etudiant = new LinkedList<Etudiant>();
         
     }
     
     
-    public void addEtudiant( Etudiant etu)
+    public void addEtudiant( Etudiant etu)                
     {
         etudiant.add(etu);
     }
  
+    
+    public void removeEtudiant(int index)
+    {
+        etudiant.remove(index);
+    }
+    
     /**
      *
      * @return
      */
     public List<Etudiant> getEtudiant()
     {
-        return etudiant;
+        return Collections.unmodifiableList(etudiant);
     }
   
+    
+    
     public void saveToFile(File file) throws FileNotFoundException, IOException
     {
         FileOutputStream fos = new FileOutputStream(file);

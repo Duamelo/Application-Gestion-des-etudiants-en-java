@@ -48,6 +48,11 @@ public class Controller
               // textPanel.appendText(nom + ": " + prenom +  ": " + age + ": " + sexe + ": " + filiere +  "\n");
     }
     
+    public void removeEtudiant(int index)
+    {
+        db.removeEtudiant(index);
+    }
+    
     public void saveToFile(File file) throws IOException
     {
         db.saveToFile(file);

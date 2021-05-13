@@ -7,6 +7,7 @@ package gui;
 
 import controller.Controller;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,6 +15,7 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
@@ -40,7 +42,8 @@ public class MainFrame extends JFrame
     private Controller controller;
     private TablePanel tablePanel;
     private JFileChooser fileChooser;
-    
+    private Component currentInjectedComponent = null;
+    private PrefsDialog prefsDialog;
     
     
     public MainFrame()
@@ -53,14 +56,25 @@ public class MainFrame extends JFrame
         textPanel = new TextPanel();
         toolbar = new Toolbar();
         saveEtuPanel = new SaveEtuPanel();
-        updateEtuPanel = new UpdateEtuPanel();
-        
+        updateEtuPanel = new UpdateEtuPanel();       
         fileChooser = new JFileChooser();
-        fileChooser.addChoosableFileFilter(new EtudiantFileFilter());
         tablePanel = new TablePanel();
-        
         controller = new Controller();
+        prefsDialog = new PrefsDialog(this);
+        
+       
+        
+        fileChooser.addChoosableFileFilter(new EtudiantFileFilter());
+        
         tablePanel.setData(controller.getEtudiant());
+        
+        tablePanel.setEtudiantTableListener(new EtudiantTableListener(){
+           public void rowDeleted(int row)
+           {
+               System.out.println(row);
+               controller.removeEtudiant(row);
+           }
+        });
         
         setJMenuBar(createMenuBar());
         
@@ -72,45 +86,20 @@ public class MainFrame extends JFrame
             }
         });
         
-        saveEtuPanel.setFormListener(new FormListener() {
-           public void formEventOccurred(FormEvent e)
-           {
-              controller.addEtudiant(e);
-              tablePanel.refresh();
-               
-              
-           }
-        });
-     
-         updateEtuPanel.setFormListener(new FormListener() {
-           public void formEventOccurred(FormEvent e)
-           {
-               String nom = e.getNom();
-               String prenom = e.getPrenom();
-               int age = e.getAge();
-               String sexe = e.getSexe();
-               String filiere = e.getFiliere();
-               
-               
-               textPanel.appendText(nom + ": " + prenom +  ": " + age + ": " + sexe + ": " + filiere +  "\n");
-               
-              
-           }
-        });
-     
-      intialisation();
+        intialisation();
     }
     
     private void intialisation()
     {
           
-        add(saveEtuPanel, BorderLayout.WEST);
+       
         add(toolbar, BorderLayout.NORTH);
         add(tablePanel, BorderLayout.CENTER);
         
       
         setMinimumSize(new Dimension(500, 400));
         setSize(600, 500);
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
     }
@@ -121,21 +110,24 @@ public class MainFrame extends JFrame
         
         JMenu actionMenu = new JMenu("Actions");
         JMenu helpMenu = new JMenu("Help");
+        JMenu window = new JMenu("Window");
         //JMenu quitMenu = new JMenu("Quit");
         
         
-        JCheckBoxMenuItem saveItem = new JCheckBoxMenuItem("Enregistrer");
-        JCheckBoxMenuItem updateItem = new JCheckBoxMenuItem("Modifier");
-        JCheckBoxMenuItem deleteItem = new JCheckBoxMenuItem("Supprimer");
-        JCheckBoxMenuItem checkItem = new JCheckBoxMenuItem("Rechercher");
-        JCheckBoxMenuItem statistiqueItem = new JCheckBoxMenuItem("Statisque");
-        JCheckBoxMenuItem afficheItem = new JCheckBoxMenuItem("Listes Etudiants");
-        JCheckBoxMenuItem importItem = new JCheckBoxMenuItem("Importer... ");
-        JCheckBoxMenuItem exportItem = new JCheckBoxMenuItem("Exporter...");
+        JMenuItem saveItem = new JMenuItem("Enregistrer");
+        JMenuItem updateItem = new JMenuItem("Modifier");
+        JMenuItem deleteItem = new JMenuItem("Supprimer");
+        JMenuItem checkItem = new JMenuItem("Rechercher");
+        JMenuItem statistiqueItem = new JMenuItem("Statisque");
+        JMenuItem afficheItem = new JMenuItem("Listes Etudiants");
+        JMenuItem importItem = new JMenuItem("Importer... ");
+        JMenuItem exportItem = new JMenuItem("Exporter...");
         JMenuItem exitMenuItem = new JMenuItem("Exit");
+        JMenuItem prefsItem = new JMenuItem("Preferences..");
         
         
-        saveItem.setSelected(true);
+        //saveItem.setSelected(true);
+      
         
         
         actionMenu.add(saveItem);
@@ -148,43 +140,102 @@ public class MainFrame extends JFrame
         actionMenu.add(exportItem);
         actionMenu.add(exitMenuItem);
         
+        window.add(prefsItem);
         
         
         menuBar.add(actionMenu);
         menuBar.add(helpMenu);
+        menuBar.add(window);
+          
+     
         
         
         
+        // change panel
         saveItem.addActionListener(new ActionListener(){
          
             public void actionPerformed(ActionEvent ae) 
             {
-                JCheckBoxMenuItem menuItem = (JCheckBoxMenuItem)ae.getSource();
+                JMenuItem menuItem = (JMenuItem)ae.getSource();
                 
-                saveEtuPanel.setVisible(menuItem.isSelected()); 
+               // saveEtuPanel.setVisible(true); 
+                
+               
+              //  MainFrame.this.rootPane.revalidate();
+              //  MainFrame.this.rootPane.repaint();
+              if ( currentInjectedComponent != null)
+              {
+                remove(currentInjectedComponent);  
+              }
+              
+                currentInjectedComponent = saveEtuPanel;
+                add(saveEtuPanel, BorderLayout.WEST);
+               
+                saveEtuPanel.setFormListener(new FormListener() {
+                    public void formEventOccurred(FormEvent e)
+                    {
+                       controller.addEtudiant(e);
+                       tablePanel.refresh();
+                    }
+                });
+                
+                MainFrame.this.revalidate();
+                currentInjectedComponent.repaint();
             }
             
-        });
+            
+            
+        });     
         
         
         updateItem.addActionListener(new ActionListener(){
          
             public void actionPerformed(ActionEvent ae) 
             {
-                JCheckBoxMenuItem menuItem = (JCheckBoxMenuItem)ae.getSource();
+                JMenuItem menuItem = (JMenuItem)ae.getSource();
                 
                  String text =   JOptionPane.showInputDialog(MainFrame.this,
                 "Matricule de l'étudiant.", 
                 "Vérification", JOptionPane.OK_OPTION|JOptionPane.INFORMATION_MESSAGE);
                 
+                //updateEtuPanel.setVisible(true); 
                 
+              //  MainFrame.this.rootPane.revalidate();
+                //MainFrame.this.rootPane.repaint();
+                
+                
+                if ( currentInjectedComponent != null)
+                  {
+                    remove(currentInjectedComponent);  
+                  }
+
+                currentInjectedComponent = updateEtuPanel;
                 add(updateEtuPanel, BorderLayout.WEST);
-                updateEtuPanel.setVisible(menuItem.isSelected()); 
+              
+                updateEtuPanel.setFormListener(new FormListener() {
+                    public void formEventOccurred(FormEvent e)
+                    {
+                        String nom = e.getNom();
+                        String prenom = e.getPrenom();
+                        int age = e.getAge();
+                        String sexe = e.getSexe();
+                        String filiere = e.getFiliere();
+
+
+                        textPanel.appendText(nom + ": " + prenom +  ": " + age + ": " + sexe + ": " + filiere +  "\n");
+
+
+                    }
+                });
+                
+                 MainFrame.this.revalidate();
+                currentInjectedComponent.repaint();
             }
             
         });
         
-         deleteItem.addActionListener(new ActionListener(){
+        
+        deleteItem.addActionListener(new ActionListener(){
          
             public void actionPerformed(ActionEvent ae) 
             {
@@ -195,13 +246,11 @@ public class MainFrame extends JFrame
                 "Vérification", JOptionPane.OK_OPTION|JOptionPane.INFORMATION_MESSAGE);
                 
                 
-                add(updateEtuPanel, BorderLayout.WEST);
-                updateEtuPanel.setVisible(menuItem.isSelected()); 
+                 
             }
             
         });
-        
-          checkItem.addActionListener(new ActionListener(){
+        checkItem.addActionListener(new ActionListener(){
          
             public void actionPerformed(ActionEvent ae) 
             {
@@ -215,15 +264,41 @@ public class MainFrame extends JFrame
             }
             
         });
-
         
+        prefsItem.addActionListener(new ActionListener(){
+           
+            public void actionPerformed(ActionEvent ae) {
+               prefsDialog.setVisible(true);
+               
+            }
+            
+        });
+        //end
+        
+        
+        
+        
+        // set Mnemonic to Menu and JMenuItem
         actionMenu.setMnemonic(KeyEvent.VK_A);
         exitMenuItem.setMnemonic(KeyEvent.VK_Q);
+        //end
         
+        
+        // set Accelerators to JCheckBoxItem
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        updateItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, ActionEvent.CTRL_MASK));
+        deleteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
+        checkItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+        statistiqueItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        afficheItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
         exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+        importItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.CTRL_MASK));
+        exportItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, ActionEvent.CTRL_MASK));
+        //end of accelerator
         
         
         
+        // set action to import file
         importItem.addActionListener(new ActionListener(){
           
             public void actionPerformed(ActionEvent ae) {
@@ -242,7 +317,7 @@ public class MainFrame extends JFrame
             }
             
         });
-        
+        //set action to export file
         exportItem.addActionListener(new ActionListener(){
           
             public void actionPerformed(ActionEvent ae) {
@@ -261,7 +336,7 @@ public class MainFrame extends JFrame
             
         });
         
-        
+        // set action to quit the application
         exitMenuItem.addActionListener(new ActionListener(){
           
             
