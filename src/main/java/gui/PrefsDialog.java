@@ -113,7 +113,7 @@ public class PrefsDialog extends JDialog
                 char[] password = passField.getPassword();
                 
                 
-                System.out.println(user + ": " + new String(password));
+                System.out.println(user + ": " + password);
                 
                 setVisible(false);
             }
